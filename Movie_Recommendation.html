@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CineMatch: The Development Journey</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Base font and animated/parallax background */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a;
+            /* Layer 1: Static starfield (radial gradients)
+               Layer 2: Animated gradient 
+               background-attachment: fixed creates the parallax scroll effect.
+            */
+            background-image: 
+                radial-gradient(circle at 25% 25%, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+                radial-gradient(circle at 75% 75%, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+                linear-gradient(-45deg, #0f172a, #1e293b, #0f172a, #334155);
+            background-size: 100px 100px, 100px 100px, 400% 400%;
+            background-position: 0 0, 0 0, 0 0;
+            background-attachment: fixed; /* This is the key for the parallax illusion */
+            animation: subtle-gradient-flow 30s ease infinite;
+            color: #d1d5db; /* text-gray-300 */
+        }
+
+        @keyframes subtle-gradient-flow {
+            0% { background-position: 0 0, 0 0, 0% 50%; }
+            50% { background-position: 0 0, 0 0, 100% 50%; }
+            100% { background-position: 0 0, 0 0, 0% 50%; }
+        }
+        
+        /* Inline code formatting */
+        code {
+            background-color: rgba(99, 102, 241, 0.1); /* indigo/10 */
+            color: #c7d2fe; /* indigo-200 */
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.9em;
+            border: 1px solid rgba(99, 102, 241, 0.2);
+        }
+
+        /* Core glassmorphism card class */
+        .glass-card {
+            background: rgba(30, 41, 59, 0.6); /* bg-slate-800 with opacity */
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+            transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+            perspective: 1000px; /* For 3D hover */
+        }
+
+        .glass-card-hover:hover {
+            transform: translateY(-10px) rotateY(-3deg); /* 3D tilt "illusion" */
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+            background: rgba(30, 41, 59, 0.8);
+            border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        /* Glass button style */
+        .glass-button {
+            background: rgba(99, 102, 241, 0.6); /* indigo-500 with opacity */
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(99, 102, 241, 0.8);
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 20px rgba(99, 102, 241, 0.3);
+        }
+
+        .glass-button:hover {
+            background: rgba(99, 102, 241, 0.8);
+            transform: scale(1.05);
+            box-shadow: 0 6px 30px rgba(99, 102, 241, 0.5);
+        }
+
+        /* Animated gradient text */
+        .animated-gradient {
+            background-image: linear-gradient(90deg, #ec4899, #a855f7, #3b82f6, #ec4899);
+            background-size: 200% auto;
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            animation: gradient-flow 8s linear infinite;
+        }
+
+        @keyframes gradient-flow {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 200% 50%; }
+        }
+        
+        /* Gradient border card for timeline */
+        .timeline-card {
+            background: rgba(30, 41, 59, 0.6); /* bg-slate-800 with opacity */
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            position: relative;
+            border-radius: 1rem;
+            transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+            perspective: 1000px;
+        }
+        
+        .timeline-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 1rem;
+            padding: 1px; /* border thickness */
+            background: linear-gradient(70deg, rgba(59, 130, 246, 0.4), rgba(168, 85, 247, 0.4));
+            -webkit-mask: 
+                linear-gradient(#fff 0 0) content-box, 
+                linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            transition: all 0.3s ease;
+        }
+
+        /* 3D tilt, different for left/right */
+        .timeline-card-left:hover {
+            transform: scale(1.03) rotateY(4deg);
+            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.4);
+        }
+        .timeline-card-right:hover {
+            transform: scale(1.03) rotateY(-4deg);
+            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.4);
+        }
+
+        .timeline-card:hover {
+             background: rgba(30, 41, 59, 0.8);
+        }
+
+        .timeline-card:hover::before {
+            padding: 2px;
+            background: linear-gradient(70deg, #3b82f6, #a855f7);
+        }
+
+        /* Custom timeline bullet */
+        .timeline-bullet {
+            background-color: #0f172a; /* bg-slate-900 */
+            border: 3px solid #6366f1; /* border-indigo-500 */
+            transition: all 0.3s ease;
+        }
+        
+        .timeline-item:hover .timeline-bullet {
+            transform: scale(1.25);
+            box-shadow: 0 0 20px rgba(99, 102, 241, 0.7);
+        }
+
+        /* Scroll-down animation */
+        @keyframes bounce-down {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-20px); }
+            60% { transform: translateY(-10px); }
+        }
+        .scroll-down {
+            animation: bounce-down 2.5s infinite;
+        }
+
+        /* Scroll-reveal animation classes */
+        .animate-on-scroll {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+            will-change: opacity, transform; /* Performance hint */
+        }
+        .animate-on-scroll.is-visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+    </style>
+</head>
+<body class="antialiased min-h-screen">
+
+    <header class="min-h-screen flex flex-col justify-center items-center text-center p-8 relative">
+        <h1 class="text-6xl md:text-8xl font-black animated-gradient mb-6">
+            CineMatch
+        </h1>
+        <p class="text-2xl md:text-3xl font-light text-gray-300 mb-12 max-w-3xl mx-auto">
+            The complete journey of an app, from a data notebook to a production-ready web application.
+        </p>
+        <a href="https://strimlit-7qd3y8yuqhgqjn7bzthjlh.streamlit.app/" 
+           target="_blank" 
+           rel="noopener noreferrer"
+           class="glass-button inline-block text-white font-bold text-lg px-12 py-5 rounded-xl shadow-lg uppercase tracking-wider">
+            View Live App
+            <span class="ml-2">→</span>
+        </a>
+        <div class="absolute bottom-10">
+            <a href="#journey" class="scroll-down text-gray-500 hover:text-indigo-400 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                </svg>
+            </a>
+        </div>
+    </header>
+
+    <div class="max-w-7xl mx-auto p-4 md:p-8">
+        
+        <section id="tech" class="mb-20 md:mb-32">
+            <h2 class="text-4xl md:text-5xl font-bold text-white text-center mb-16 animate-on-scroll">Core Technologies & Methods</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                
+                <div class="glass-card glass-card-hover p-8 rounded-2xl animate-on-scroll" style="transition-delay: 100ms;">
+                    <div class="flex items-center text-indigo-400 mb-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" /></svg>
+                        <h3 class="text-2xl font-bold text-white ml-3">Libraries & Frameworks</h3>
+                    </div>
+                    <ul class="space-y-3 text-gray-300 text-lg list-disc list-inside">
+                        <li><strong>Streamlit:</strong> The core Python framework for the interactive web app frontend.</li>
+                        <li><strong>Pandas:</strong> Used for all data manipulation and CSV processing in the backend.</li>
+                        <li><strong>Scikit-learn:</strong> The heart of the ML model, used for <code>CountVectorizer</code> and <code>cosine_similarity</code>.</li>
+                        <li><strong>Numpy:</strong> For numerical operations and optimizing the similarity matrix size.</li>
+                    </ul>
+                </div>
+                
+                <div class="glass-card glass-card-hover p-8 rounded-2xl animate-on-scroll" style="transition-delay: 200ms;">
+                    <div class="flex items-center text-indigo-400 mb-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m-2 6h-2M12 5V3m2 18v-2M12 9v6m-3-3h6" /></svg>
+                        <h3 class="text-2xl font-bold text-white ml-3">Core ML Methods</h3>
+                    </div>
+                    <ul class="space-y-3 text-gray-300 text-lg list-disc list-inside">
+                        <li><strong>Content-Based Filtering:</strong> The overall recommendation strategy. It suggests movies based on their shared attributes (tags).</li>
+                        <li><strong>Bag-of-Words:</strong> The <code>CountVectorizer</code> model, which converts text tags into a numerical vector matrix.</li>
+                        <li><strong>Cosine Similarity:</strong> The algorithm used to calculate the "similarity" score (from 0 to 1) between any two movies.</li>
+                        <li><strong>Feature Engineering:</strong> The critical process of creating the <code>tags</code> column from raw text.</li>
+                    </ul>
+                </div>
+                
+                <div class="glass-card glass-card-hover p-8 rounded-2xl animate-on-scroll" style="transition-delay: 300ms;">
+                    <div class="flex items-center text-indigo-400 mb-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M4 17v4M2 19h4M20 17v4M18 19h4M20 3v4M18 5h4M12 9v6m-3-3h6" /></svg>
+                        <h3 class="text-2xl font-bold text-white ml-3">App Techniques</h3>
+                    </div>
+                    <ul class="space-y-3 text-gray-300 text-lg list-disc list-inside">
+                        <li><strong>State Management:</strong> Using <code>st.session_state</code> to control the UI, especially for the popup modal.</li>
+                        <li><strong>Custom CSS Injection:</strong> Using <code>st.markdown(unsafe_allow_html=True)</code> to apply custom styles, fonts, and 3D effects.</li>
+                        <li><strong>Data Caching:</strong> Using <code>@st.cache_data</code> to load the large <code>.pkl</code> files only once, making the app fast.</li>
+                        <li><strong>Robust Error Handling:</strong> Architecting the app to cleanly handle data loading failures.</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section id="journey" class="mb-20 md:mb-32">
+            <h2 class="text-4xl md:text-5xl font-bold text-white text-center mb-24 animate-on-scroll">The Development Journey</h2>
+            
+            <div class="relative container mx-auto px-6 flex flex-col space-y-8">
+                
+                <div class="relative z-10 timeline-item">
+                    <div class="flex items-center justify-between animate-on-scroll">
+                        
+                        <div class="timeline-card timeline-card-left p-6 md:p-8 rounded-lg shadow-xl md:w-5/12">
+                            <time class="block text-lg font-semibold mb-2 text-indigo-300">V0.x: The Blueprint</time>
+                            <h3 class="text-3xl font-bold text-white mb-4">The Data Science Backend</h3>
+                            <ul class="space-y-2 text-lg text-gray-300">
+                                <li><strong class="text-white">Merge & Clean:</strong> Transformed raw TMDB 5000 CSVs into a single, clean Pandas DataFrame.</li>
+                                <li><strong class="text-white">Feature Engineering:</strong> Created the critical <code>tags</code> column by combining overview, cast, crew, and genres.</li>
+                                <li><strong class="text-white">Model & Export:</strong> Used <code>CountVectorizer</code> and <code>cosine_similarity</code> to build and export <code>movies_dict.pkl</code> and <code>similarity.pkl</code>.</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="z-10">
+                            <span class="absolute flex items-center justify-center w-8 h-8 timeline-bullet rounded-full left-1/2 -translate-x-1/2"></span>
+                        </div>
+                        
+                        <div class="md:w-5/12"></div> 
+                    </div>
+                </div>
+
+                <div class="relative z-10 timeline-item">
+                    <div class="flex items-center justify-between md:flex-row-reverse animate-on-scroll">
+                        
+                        <div class="timeline-card timeline-card-right p-6 md:p-8 rounded-lg shadow-xl md:w-5/12">
+                            <time class="block text-lg font-semibold mb-2 text-indigo-300">V1.0: The First Spark</time>
+                            <h3 class="text-3xl font-bold text-white mb-4">Basic Proof of Concept</h3>
+                            <p class="text-lg text-gray-300">The first Streamlit app was born. It used <code>@st.cache_data</code> to load the models and featured a simple <code>st.selectbox</code> and <code>st.button</code>. It proved the core logic: a user could pick a movie and see a text-based list of 5 recommendations.</p>
+                        </div>
+
+                        <div class="z-10">
+                            <span class="absolute flex items-center justify-center w-8 h-8 timeline-bullet rounded-full left-1/2 -translate-x-1/2"></span>
+                        </div>
+                        
+                        <div class="md:w-5/12"></div> 
+                    </div>
+                </div>
+
+                <div class="relative z-10 timeline-item">
+                    <div class="flex items-center justify-between animate-on-scroll">
+                        
+                        <div class="timeline-card timeline-card-left p-6 md:p-8 rounded-lg shadow-xl md:w-5/12">
+                            <time class="block text-lg font-semibold mb-2 text-indigo-300">V2.0: The "Expert" Upgrade</time>
+                            <h3 class="text-3xl font-bold text-white mb-4">The Visual & UI Polish</h3>
+                            <p class="text-lg text-gray-300">Functionality was just the start. We created <code>fetch_poster</code> to call the TMDB API, upgrading the UI from text to a 5-column grid of posters. A large custom CSS block was injected, adding a pro font, full dark mode, and 3D "tilt-on-hover" cards.</p>
+                        </div>
+                        
+                        <div class="z-10">
+                            <span class="absolute flex items-center justify-center w-8 h-8 timeline-bullet rounded-full left-1/2 -translate-x-1/2"></span>
+                        </div>
+                        
+                        <div class="md:w-5/12"></div> 
+                    </div>
+                </div>
+
+                <div class="relative z-10 timeline-item">
+                    <div class="flex items-center justify-between md:flex-row-reverse animate-on-scroll">
+                        
+                        <div class="timeline-card timeline-card-right p-6 md:p-8 rounded-lg shadow-xl md:w-5/12">
+                            <time class="block text-lg font-semibold mb-2 text-red-400">[Crisis] V3.0: The First Crisis</time>
+                            <h3 class="text-3xl font-bold text-white mb-4">The Network Block</h3>
+                            <p class="text-lg text-gray-300">Disaster. The app's core visual feature, fetching posters, suddenly failed with a <code>ConnectionResetError</code>. The Python script was being blocked from <code>api.themoviedb.org</code>. Even switching to API v4 Auth failed, proving it was a network block. The app was downgraded to a text-only list.</p>
+                        </div>
+
+                        <div class="z-10">
+                            <span class="absolute flex items-center justify-center w-8 h-8 timeline-bullet rounded-full left-1/2 -translate-x-1/2"></span>
+                        </div>
+                        
+                        <div class="md:w-5/12"></div> 
+                    </div>
+                </div>
+                
+                <div class="relative z-10 timeline-item">
+                    <div class="flex items-center justify-between animate-on-scroll">
+                        
+                        <div class="timeline-card timeline-card-left p-6 md:p-8 rounded-lg shadow-xl md:w-5/12">
+                            <time class="block text-lg font-semibold mb-2 text-green-400">[Solution] V4.0: The Architectural Pivot</time>
+                            <h3 class="text-3xl font-bold text-white mb-4">The Data Pipeline Solution</h3>
+                            <p class="text-lg text-gray-300">The solution wasn't to fix the connection, but to bypass it. We modified the backend notebook to save the <code>poster_path</code> in <code>movies_dict.pkl</code>. The Streamlit app no longer used <code>requests</code>. Instead, it built the full image URL and passed it to <code>st.image</code>, forcing the user's browser (not Python) to fetch the image.</p>
+                        </div>
+                        
+                        <div class="z-10">
+                            <span class="absolute flex items-center justify-center w-8 h-8 timeline-bullet rounded-full left-1/2 -translate-x-1/2"></span>
+                        </div>
+                        
+                        <div class="md:w-5/12"></div> 
+                    </div>
+                </div>
+
+                <div class="relative z-10 timeline-item">
+                    <div class="flex items-center justify-between md:flex-row-reverse animate-on-scroll">
+                        
+                        <div class="timeline-card timeline-card-right p-6 md:p-8 rounded-lg shadow-xl md:w-5/12">
+                            <time class="block text-lg font-semibold mb-2 text-indigo-300">V5.0: Rich Features & Refinement</time>
+                            <h3 class="text-3xl font-bold text-white mb-4">Polishing the UX</h3>
+                            <ul class="space-y-2 text-lg text-gray-300">
+                                <li><strong class="text-white">Bug Fix:</strong> A "You Selected" card revealed spaceless names (e.g., <code>SamWorthington</code>). Fixed with a regex helper in <code>load_data()</code>.</li>
+                                <li><strong class="text-white">Feature:</strong> Upgraded <code>recommend</code> to return Top 8 similar and 2 "Wildcard" (least similar) movies, split into <code>st.tabs</code> for a cleaner UX.</li>
+                            </ul>
+                        </div>
+
+                        <div class="z-10">
+                            <span class="absolute flex items-center justify-center w-8 h-8 timeline-bullet rounded-full left-1/2 -translate-x-1/2"></span>
+                        </div>
+                        
+                        <div class="md:w-5/12"></div> 
+                    </div>
+                </div>
+                
+                <div class="relative z-10 timeline-item">
+                    <div class="flex items-center justify-between animate-on-scroll">
+                        
+                        <div class="timeline-card timeline-card-left p-6 md:p-8 rounded-lg shadow-xl md:w-5/12">
+                            <time class="block text-lg font-semibold mb-2 text-red-400">[Crisis] V7.0: The Environment Crash</time>
+                            <h3 class="text-3xl font-bold text-white mb-4">The Broken Modal</h3>
+                            <p class="text-lg text-gray-300">A new "floating popup" for details crashed the app with a <code>TypeError</code> on <code>st.dialog()</code>. The deployment environment's Streamlit version was too old. The fix was a "Hybrid Rendering" hack: building a custom modal by injecting HTML <code>&lt;div&gt;</code> tags with <code>st.markdown</code> around normal Streamlit components.</p>
+                        </div>
+                        
+                        <div class="z-10">
+                            <span class="absolute flex items-center justify-center w-8 h-8 timeline-bullet rounded-full left-1/2 -translate-x-1/2"></span>
+                        </div>
+                        
+                        <div class="md:w-5/12"></div> 
+                    </div>
+                </div>
+                
+                <div class="relative z-10 timeline-item">
+                    <div class="flex items-center justify-between md:flex-row-reverse animate-on-scroll">
+                        
+                        <div class="timeline-card timeline-card-right p-6 md:p-8 rounded-lg shadow-xl md:w-5/12">
+                            <time class="block text-lg font-semibold mb-2 text-green-400">[Solution] V8.0: Production Hardening</time>
+                            <h3 class="text-3xl font-bold text-white mb-4">The "Zombie Script" Fix</h3>
+                            <p class="text-lg text-gray-300">The final boss: a "Zombie Script" error. On deployment, if <code>load_data()</code> failed (e.g., a URL typo), the script kept running past S<code>st.stop()</code>, crashing with a <code>NameError</code>. The fix: We refactored the entry point so the UI-building function (<code>main_app()</code>) is only called if <code>load_data()</code> completes successfully. This is the key to a production-ready app.</p>
+                        </div>
+
+                        <div class="z-10">
+                            <span class="absolute flex items-center justify-center w-8 h-8 timeline-bullet rounded-full left-1/2 -translate-x-1/2"></span>
+                        </div>
+                        
+                        <div class="md:w-5/12"></div> 
+                    </div>
+                </div>
+
+            </div>
+        </section>
+        <section class="mb-20 md:mb-32">
+            <h2 class="text-4xl md:text-5xl font-bold text-white text-center mb-16 animate-on-scroll">Major Challenges & Resolutions</h2>
+            <div class="flex flex-col gap-10 max-w-5xl mx-auto">
+                
+                <div class="glass-card glass-card-hover p-8 rounded-2xl flex flex-col animate-on-scroll">
+                    <div class="flex items-center text-red-400 mb-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /></svg>
+                        <h3 class="text-2xl font-bold text-white ml-3">The API Network Block</h3>
+                    </div>
+                    <p class="text-gray-300 text-lg mb-4 flex-grow">A <code>ConnectionResetError</code> completely blocked the Python script from fetching posters, killing the app's visual appeal.</p>
+                    <div class="mt-auto pt-4 border-t border-gray-700">
+                        <span class="text-lg font-semibold text-green-400">Resolution:</span>
+                        <p class="text-lg text-gray-200">Re-architected the data pipeline. We saved the <code>poster_path</code> in the backend <code>.pkl</code> file, then passed the full image URL to <code>st.image</code>. This forced the user's browser to fetch the image, bypassing Python's network block entirely.</p>
+                    </div>
+                </div>
+                
+                <div class="glass-card glass-card-hover p-8 rounded-2xl flex flex-col animate-on-scroll">
+                    <div class="flex items-center text-red-400 mb-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        <h3 class="text-2xl font-bold text-white ml-3">The Streamlit Version Crash</h3>
+                    </div>
+                    <p class="text-gray-300 text-lg mb-4 flex-grow">A <code>TypeError</code> on <code>st.dialog()</code> crashed the app. The deployment environment's Streamlit version was too old, and no built-in modal component worked.</p>
+                    <div class="mt-auto pt-4 border-t border-gray-700">
+                        <span class="text-lg font-semibold text-green-400">Resolution:</span>
+                        <p class="text-lg text-gray-200">Built a custom modal from scratch using "Hybrid Rendering." We used <code>st.markdown</code> to inject HTML <code>&lt;div&gt;</code> tags (styled with <code>backdrop-filter</code>) around standard Streamlit components to create a functional, reliable modal.</p>
+                    </div>
+                </div>
+                
+                <div class="glass-card glass-card-hover p-8 rounded-2xl flex flex-col animate-on-scroll">
+                    <div class="flex items-center text-red-400 mb-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01" /></svg>
+                        <h3 class="text-2xl font-bold text-white ml-3">The Deployment "Zombie Script"</h3>
+                    </div>
+                    <p class="text-gray-300 text-lg mb-4 flex-grow">On deployment, a data loading failure (e.g., a URL typo) would cause <code>st.stop()</code>, but the script would keep running, crashing with a <code>NameError</code> as it tried to access variables that were never created.</p>
+                    <div class="mt-auto pt-4 border-t border-gray-700">
+                        <span class="text-lg font-semibold text-green-400">Resolution:</span>
+                        <p class="text-lg text-gray-200">Refactored the app's entry point. All UI code was moved into a <code>main_app()</code> function, which is only called if <code>load_data()</code> completes successfully. This ensures the app either loads fully or stops cleanly.</p>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <footer class="text-center p-10 text-gray-500 border-t border-gray-800">
+            <p>A detailed breakdown of the CineMatch app development journey.</p>
+        </footer>
+
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const elementsToAnimate = document.querySelectorAll('.animate-on-scroll');
+
+            if ("IntersectionObserver" in window) {
+                const observer = new IntersectionObserver((entries, observer) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            entry.target.classList.add('is-visible');
+                            observer.unobserve(entry.target);
+                        }
+                    });
+                }, {
+                    threshold: 0.1 // Trigger when 10% of the element is in view
+                });
+
+                elementsToAnimate.forEach(el => {
+                    observer.observe(el);
+                });
+            } else {
+                // Fallback for older browsers
+                elementsToAnimate.forEach(el => {
+                    el.classList.add('is-visible');
+                });
+            }
+        });
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,283 @@
+V0.x0: The Data Science Backend (Jupyter Notebook)
+This phase involved all offline data processing to create the app's "database" files.
+
+V0.1: Data Ingestion & Merging
+
+Loaded tmdb_5000_movies.csv and tmdb_5000_credits.csv into Pandas.
+
+
+
+Merged the two DataFrames on the title column.
+
+
+
+
+
+V0.2: Feature Engineering & Cleaning
+
+Selected key columns for the UI (movie_id, title, overview) and model (genres, keywords, cast, crew).
+
+
+
+Dropped rows with missing data.
+
+Created helper functions using ast.literal_eval to parse the JSON-like strings in genres, keywords, cast, and crew.
+
+
+
+
+
+Extracted the director's name from the crew column.
+
+
+
+
+Extracted the top 5 cast members from the cast column.
+
+
+
+V0.3: Critical Feature Engineering (The tags Column)
+
+
+Crucial Step: Removed all spaces from names in genres, cast, crew, and keywords (e.g., "Sam Worthington" became "SamWorthington"). This ensures the model treats a name as a single, unique "word".
+
+
+
+
+
+Combined overview, genres, keywords, cast, and crew into one large tags list for each movie.
+
+
+
+V0.4: Modeling & Export
+
+Joined the tags list back into a single, lowercase string.
+
+
+Used CountVectorizer (Bag-of-Words) to convert all tags into a vector matrix, limited to 5,000 features.
+
+
+
+Applied cosine_similarity to the matrix to create the final (4806, 4806) similarity model.
+
+
+
+
+Optimization: Saved the similarity matrix as np.float32 to reduce file size by 50%.
+
+
+Exported two files: similarity.pkl (the model) and movies_dict.pkl (the UI-facing data).
+
+
+
+
+
+V1.0: Basic Proof of Concept (First Streamlit App)
+V1.0: Initial UI
+
+Created the basic app.py script with a st.title.
+
+
+
+Built a load_data function (using @st.cache_data) to load the two .pkl files.
+
+
+Built a recommend function that, when given a movie, would find the top 5 similar titles.
+
+
+The UI consisted of a single st.selectbox for input and an st.button to trigger the recommendation.
+
+
+V2.0: The Visual & "Expert" Upgrade
+This version focused on transforming the basic app into a visually appealing, "designer" application.
+
+
+
+V2.0: API & Poster Integration
+
+Created a fetch_poster function to hit the TMDB API (v3) with a movie ID to get a poster URL.
+
+
+
+The recommend function was upgraded to return poster URLs along with titles.
+
+The UI was changed from a simple list to a 5-column grid using st.columns to display the posters.
+
+
+
+Injected custom CSS to create the first dark-mode "movie cards".
+
+V2.1: The "Expert" UI Polish
+
+Injected a large, custom CSS block to style the entire app.
+
+
+
+Added the "Montserrat" web font for a professional look.
+
+
+
+Upgraded the movie cards with a 3D "tilt-on-hover" illusion.
+
+
+Styled all Streamlit components, including st.tabs, st.expander, and buttons, for a cohesive dark-mode theme.
+
+
+The main title was styled with an animated, colorful gradient.
+
+V3.0: Network Failure & API Workarounds
+This version chronicles a critical network-blocking bug.
+
+V3.0: API Failure & Downgrade
+
+
+Bug: The app began crashing with a ConnectionResetError(10054). This indicated the Python script was being blocked from accessing api.themoviedb.org.
+
+
+
+Workaround: All API-calling code, including the requests library and the fetch_poster function, was deleted.
+
+
+UI Downgrade: The 5-column poster grid was removed and replaced with a simple st.container that just listed the 5 recommended movie titles. The app was functional but had no visuals.
+
+
+V3.1: New Auth Attempt (Failed)
+
+A new attempt was made to fix the connection error, suspecting an auth issue.
+
+The requests code was re-added, but this time using the API v4 Read Access Token (Bearer) in the header.
+
+
+Result: The ConnectionResetError persisted, proving the issue was a network block, not authentication.
+
+V4.0: The Data Pipeline Solution (Major Fix)
+This version implemented a major architectural change to permanently bypass the network block.
+
+
+V4.0: New Architecture
+
+
+Backend Change: The Jupyter Notebook script (V0.x) was modified to include the poster_path column when creating and saving movies_dict.pkl.
+
+
+Frontend Change: The requests library and fetch_poster function were permanently deleted from app.py.
+
+The recommend function was updated to read the poster_path from the locally-loaded DataFrame.
+
+The app now builds the full image URL (e.g., https://image.tmdb.org/t/p/w500/...) and passes this URL directly to st.image.
+
+Result: The user's browser (which is not blocked) fetches the image, not the Python script. This solved the error completely.
+
+V5.0: Rich Details & Layout Refinement
+With the poster bug fixed, development focused on adding features and refining the UI/UX.
+
+V5.0: Adding Rich Details & "Wildcards"
+
+
+Bug: The app now showed a "You Selected" card with details, but names were "spaceless" (SamWorthington).
+
+
+
+
+Fix: The load_data function was upgraded with a format_name regex helper to add spaces back into names for display.
+
+
+
+Feature: The "You Selected" card was expanded to show overview, rating, cast, and director.
+
+
+
+Feature: The recommend function was changed to return the Top 8 similar and Bottom 2 "wildcard" (least similar) movies.
+
+
+UI: Recommendations were split into st.tabs ("Top 5" and "More to Explore").
+
+
+V5.1: Layout Revolution (Floating Elements)
+
+The main filter controls were moved from the main page into a st.popover ("Filters & Info") or, in another iteration, into a collapsed st.sidebar to create a "floating icon" feel.
+
+
+The "You Selected" card layout was adjusted to st.columns([1, 4]) and CSS was used to make the poster smaller.
+
+
+A custom-styled footer was added to the bottom of the app.
+
+V6.0: The "WOW Edition" & The Great Bug Bash
+This version (based on a user-provided file) introduced a new "floating popup" concept, but it was riddled with bugs.
+
+V6.0: Popup Implementation & Bugs
+
+
+Buggy Feature: A floating popup for details was added, but it was triggered by URL query params (?popup_movie=...), which caused a new tab to open on click.
+
+
+Bug: The app's layout was broken: ratings and buttons were outside the movie cards, and the new popup was small and stuck in a corner.
+
+
+Bug Fix: The <a> tag was removed to stop the new tab from opening.
+
+
+Bug Fix: Extra buttons were removed from the main grid.
+
+
+Refactor: The URL query param logic (st.experimental_get_query_params) was completely replaced with pure st.session_state to manage the popup's visibility.
+
+
+UI Fix: The popup CSS was rewritten to be large, centered, and have a "frosted glass" (backdrop-filter) effect.
+
+V7.0: The Broken Modal & Final Fixes
+This version dealt with a show-stopping bug related to the Streamlit environment itself.
+
+V7.0: The Environment Crash
+
+Bug: All movie cards disappeared. Fix: A single-character HTML typo (class'poster') was found and fixed to class='poster'.
+
+
+Bug: Clicking the "Details" button (to open the popup) crashed the entire app.
+
+
+Investigation: The log showed a TypeError: 'function' object does not support the context manager protocol on the st.dialog(...) line. Attempts to use st.experimental_dialog or dialog.container() also failed. This proved the app's Streamlit version was too old or broken to use any built-in modal component.
+
+
+
+
+V7.1: The Custom CSS Modal (Workaround)
+
+Since st.dialog was unusable, a modal was built from scratch.
+
+
+Fix: New CSS for .modal-overlay (a full-screen blurred background) and .details-panel (the floating box) was written.
+
+
+Fix: A "Hybrid Rendering" approach was used: st.markdown injected the opening <div> HTML, normal Streamlit components (st.columns, st.button) rendered the content, and st.markdown injected the closing </div>.
+
+
+Result: This bypassed the Streamlit version bug, creating a reliable, working popup. Ratings were also fixed on the main grid.
+
+
+V8.0: Production Hardening & Final Polish
+This is the final, production-ready version of the app.
+
+V8.0: Deployment "Zombie Script" Fix
+
+
+Deployment Bug: The app crashed on Streamlit Cloud with FileNotFoundError. Fix: A typo in a URL (https.://) was corrected to https://.
+
+
+
+Deployment Bug: The app still crashed, but with NameError: 'filtered_movie_titles' is not defined.
+
+
+Cause: This was a "zombie script" error. load_data() was failing (due to the URL bug) and calling st.stop(), but the script continued running on the server, trying to build a UI with variables that didn't exist.
+
+
+Production Fix: The app's structure was completely refactored. All UI code was moved into a main_app(...) function. An entry point at the bottom of the script now calls load_data() first, and only if it succeeds does it call main_app(). This robust structure prevents the app from ever trying to build a broken UI.
+
+
+
+V8.1: Final Component Polish
+
+(Presumably after a Streamlit environment update) The V7.1 custom CSS modal "hack" was removed.
+
+The app was refactored to use the official, clean st.dialog() component, which now worked correctly and guaranteed all content (images, text) would render properly.
